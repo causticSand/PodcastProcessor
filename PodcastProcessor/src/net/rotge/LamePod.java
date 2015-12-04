@@ -9,9 +9,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class LamePod {
-	public final static String SAMPLE_RATE = "8";
+	public final static String SAMPLE_RATE = "--resample 8";
 	public final static int NUM_CHANNELS = 1;
-	public final static String BIT_RATE = "32";
+	public final static String BIT_RATE = "-b 32";
+	private static String encoderCommand = "/usr/bin/lame";
+	private static String supressOutput = "-quiet";
+	private static String downMixToMono = "-a";
+
 	private File fileInProgress;
 	private Path currentWorkingDirectory;
 	private Path source;
@@ -20,7 +24,7 @@ public class LamePod {
 		this.fileInProgress = incFile;
 		this.currentWorkingDirectory = directoryToWriteTo;
 
-		String[] lameCommand = { "/usr/bin/lame", "-quiet", "-b", BIT_RATE, "--resample", SAMPLE_RATE, "-a",
+		String[] lameCommand = { encoderCommand, supressOutput, BIT_RATE, SAMPLE_RATE, downMixToMono,
 				incFile.toString(), "--out-dir", currentWorkingDirectory.toString() };
 
 		ProcessBuilder probuilder = new ProcessBuilder(lameCommand);
@@ -30,6 +34,7 @@ public class LamePod {
 		InputStreamReader isr = new InputStreamReader(is);
 		BufferedReader br = new BufferedReader(isr);
 		String line;
+		System.out.println("Converting: " + incFile.toString());
 		while ((line = br.readLine()) != null) {
 			// Uncomment to see downsampling output on command line
 			// System.out.println(line);
@@ -37,7 +42,11 @@ public class LamePod {
 
 		try {
 			int exitValue = process.waitFor();
+			if (exitValue == 0) {
+				System.out.println("Sucess!");
+			} else {
 			System.out.println("ExitValue is " + exitValue);
+			}
 		} catch (InterruptedException e1) {
 			e1.printStackTrace();
 		}
