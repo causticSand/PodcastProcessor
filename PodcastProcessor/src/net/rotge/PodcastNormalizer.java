@@ -10,13 +10,16 @@ import java.nio.file.Path;
 public class PodcastNormalizer {
 	String fileToNormalize;
 	String directoryToWriteTo;
+	private static String normalizeCommand = "/usr/bin/mp3gain";
+	private static String preventClipping = "-k";
+	private static String setDefaultVolTo89db = "-r";
 
 	public void equalizeVolume(File incFile, Path outDir) throws IOException {
 		fileToNormalize = incFile.getAbsolutePath();
 
 		// using -k option auto lower's gain to prevent clipping
 		// the -r option sets the default volume to 89db
-		String[] createNormalizeCommand = { "mp3gain", "-k", "-r", fileToNormalize };
+		String[] createNormalizeCommand = { normalizeCommand, preventClipping, setDefaultVolTo89db, fileToNormalize };
 		ProcessBuilder proBuilder = new ProcessBuilder(createNormalizeCommand);
 		Process process = proBuilder.start();
 
