@@ -27,7 +27,9 @@ public class ISOCreator {
 		BufferedReader br = new BufferedReader(isr);
 		String line;
 		while ((line = br.readLine()) != null) {
+			// uncomment this line to see ISO creation spam.
 			// System.out.println(line);
+
 		}
 
 		try {
