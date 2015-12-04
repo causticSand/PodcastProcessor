@@ -11,7 +11,7 @@ public class PodcastNormalizer {
 	String fileToNormalize;
 	String directoryToWriteTo;
 
-	public void split(File incFile, Path outDir) throws IOException {
+	public void equalizeVolume(File incFile, Path outDir) throws IOException {
 		fileToNormalize = incFile.getAbsolutePath();
 
 		String[] createNormalizeCommand = { "mp3gain", "-k", "-r", fileToNormalize };
