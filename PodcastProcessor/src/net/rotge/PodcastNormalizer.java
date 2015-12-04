@@ -14,6 +14,8 @@ public class PodcastNormalizer {
 	public void equalizeVolume(File incFile, Path outDir) throws IOException {
 		fileToNormalize = incFile.getAbsolutePath();
 
+		// using -k option auto lower's gain to prevent clipping
+		// the -r option sets the default volume to 89db
 		String[] createNormalizeCommand = { "mp3gain", "-k", "-r", fileToNormalize };
 		ProcessBuilder proBuilder = new ProcessBuilder(createNormalizeCommand);
 		Process process = proBuilder.start();
@@ -22,17 +24,23 @@ public class PodcastNormalizer {
 		InputStreamReader isr = new InputStreamReader(is);
 		BufferedReader br = new BufferedReader(isr);
 		String line;
+		System.out.println("Normalizing: " + fileToNormalize);
 		while ((line = br.readLine()) != null) {
-			System.out.println(line);
+			// uncomment the below line to show console output
+			// System.out.println(line);
 		}
 
 		try {
 			int exitValue = process.waitFor();
-			System.out.println("\n\nExitValue is " + exitValue);
+			if (exitValue == 0) {
+				System.out.println("Sucess!");
+			} else {
+				System.out.println("\nExitValue is " + exitValue);
+			}
 		} catch (InterruptedException e1) {
 			e1.printStackTrace();
 		}
-		System.out.println("Normalizing: " + fileToNormalize);
+
 	}
 
 }
