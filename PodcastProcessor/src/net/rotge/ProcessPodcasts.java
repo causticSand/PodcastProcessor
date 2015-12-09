@@ -44,7 +44,11 @@ public class ProcessPodcasts extends SimpleFileVisitor<Path> {
 			// and writes an ISO file to OUTDIR directory
 			if (FileUtils.sizeOfDirectory(OUTDIR.toFile()) > sizeOfMedium) {
 				createIso(OUTDIR);
+				eraseDisk();
 				return FileVisitResult.TERMINATE;
+			}
+			if (file.toString().contains("converted_")) {
+				return CONTINUE;
 			}
 			System.out.println("Current file being Processed: " + file.toString());
 			File returnedProcessedFile = downSample(file.toFile(), currentWorkingDirectory.toPath());
@@ -86,8 +90,10 @@ public class ProcessPodcasts extends SimpleFileVisitor<Path> {
 		InputStreamReader isr = new InputStreamReader(is);
 		BufferedReader br = new BufferedReader(isr);
 		String line;
+
 		while ((line = br.readLine()) != null) {
-			// System.out.println(line);
+			System.out.println(line + "\r");
+
 		}
 		try {
 			int exitValue = proc.waitFor();
@@ -95,6 +101,12 @@ public class ProcessPodcasts extends SimpleFileVisitor<Path> {
 		} catch (InterruptedException e2) {
 			e2.printStackTrace();
 		}
+
+		StringBuilder builder = new StringBuilder();
+		for (String s : command) {
+			builder.append(s);
+		}
+		System.out.println(builder.toString());
 	}
 
 	/**
@@ -172,12 +184,12 @@ public class ProcessPodcasts extends SimpleFileVisitor<Path> {
 	 * @throws IOException
 	 */
 	public File downSample(File incFile, Path directoryToWriteTo) throws IOException {
-		String SAMPLE_RATE = "--resample 8";
+		String SAMPLE_RATE = "--resample 8 ";
 		int NUM_CHANNELS = 1;
 		String BIT_RATE = "-b 32";
 		String encoderCommand = "/usr/bin/lame";
 		String supressOutput = "-quiet";
-		String downMixToMono = "-a";
+		String downMixToMono = "-m m";
 
 		File fileInProgress;
 		Path currentWorkingDirectory;
@@ -186,8 +198,8 @@ public class ProcessPodcasts extends SimpleFileVisitor<Path> {
 		fileInProgress = incFile;
 		currentWorkingDirectory = directoryToWriteTo;
 
-		String[] lameCommand = { encoderCommand, supressOutput, BIT_RATE, "--resample", SAMPLE_RATE, downMixToMono,
-				incFile.toString(), "--out-dir", currentWorkingDirectory.toString() };
+		String[] lameCommand = { encoderCommand, BIT_RATE, SAMPLE_RATE, downMixToMono, "-a",
+				incFile.toString(), " --out-dir ", currentWorkingDirectory.toString() };
 		runOperatingSystemCommand(lameCommand);
 		source = incFile.toPath();
 		Files.move(source, source.resolveSibling("converted_" + incFile.getName()));
@@ -204,7 +216,8 @@ public class ProcessPodcasts extends SimpleFileVisitor<Path> {
 	 * @throws IOException
 	 */
 	public void split(File incFile, Path incDir) throws IOException {
-		String SPLITTIME = " -t 14.0";
+		String SPLITTIME = "-t 14.0";
+		// String SPLITNUMBER = "-S 3";
 		String splitCommand = "/usr/bin/mp3splt";
 		String outDirParameter = "-d";
 		Path currentWorkingDirectory;
@@ -248,12 +261,11 @@ public class ProcessPodcasts extends SimpleFileVisitor<Path> {
 	private void cleanUpSource(Path fileToDelete) {
 		try {
 
-			if (Files.size(fileToDelete) > 15728640) {
 				System.out.println("Deleting: " + Paths.get(fileToDelete.toString()));
 				Files.delete(Paths.get(fileToDelete.toString()));
-			}
+
 		} catch (IOException e) {
-			System.out.println("Problem deleting source file in MP3SPLT");
+			System.out.println("Problem deleting source file in cleanUpSource");
 			e.printStackTrace();
 		}
 	}
