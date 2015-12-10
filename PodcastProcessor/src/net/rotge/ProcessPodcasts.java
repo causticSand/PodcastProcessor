@@ -14,6 +14,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 
 import org.apache.commons.io.FileUtils;
@@ -29,9 +30,9 @@ public class ProcessPodcasts extends SimpleFileVisitor<Path> {
 	Path start;
 	long sizeOfMedium; // testing value
 
-	public ProcessPodcasts(Path oUTDIR, Path start, long sizeOfMedium) {
+	public ProcessPodcasts(Path OUTDIR, Path start, long sizeOfMedium) {
 		super();
-		OUTDIR = oUTDIR;
+		this.OUTDIR = OUTDIR;
 		this.start = start;
 		this.sizeOfMedium = sizeOfMedium;
 	}
@@ -52,7 +53,6 @@ public class ProcessPodcasts extends SimpleFileVisitor<Path> {
 			}
 			System.out.println("Current file being Processed: " + file.toString());
 			File returnedProcessedFile = downSample(file.toFile(), currentWorkingDirectory.toPath());
-
 			split(returnedProcessedFile, currentWorkingDirectory.toPath());
 
 		} else {
@@ -102,11 +102,7 @@ public class ProcessPodcasts extends SimpleFileVisitor<Path> {
 			e2.printStackTrace();
 		}
 
-		StringBuilder builder = new StringBuilder();
-		for (String s : command) {
-			builder.append(s);
-		}
-		System.out.println(builder.toString());
+		System.out.println(Arrays.toString(command));
 	}
 
 	/**
@@ -125,7 +121,7 @@ public class ProcessPodcasts extends SimpleFileVisitor<Path> {
 		final String DUMMYWRITE = "-dummy";
 		final String LOCATIONOFCDRW = "/dev/sr0";
 		final String BLANKTYPE = "-blank=fast";
-		String[] eraseCDRWCommand = { PROGRAMTORUN, DUMMYWRITE, BLANKTYPE, LOCATIONOFCDRW };
+		String[] eraseCDRWCommand = { PROGRAMTORUN, BLANKTYPE, LOCATIONOFCDRW };
 		runOperatingSystemCommand(eraseCDRWCommand);
 	}
 
@@ -144,34 +140,16 @@ public class ProcessPodcasts extends SimpleFileVisitor<Path> {
 		String isoWritingProgram = "/usr/bin/genisoimage";
 		String fileNameCase = "--allow-lowercase";
 		String addRockRidge = "-R";
-		String outLocation = "-o " + writeIsoToLocation;
+		String outLocation = "-o" + writeIsoToLocation;
 		String isoNameDate = todayDate.format(isoDate);
 		String isoPrefix = "Podcasts";
 		String isoExtension = ".iso";
 
-		// String[] createIsoCommand = { isoWritingProgram, fileNameCase, addRockRidge,
-		// outLocation + isoPrefix + isoNameDate + isoExtension, rootIsoDirectory.toString() };
-		ProcessBuilder proBuilder = new ProcessBuilder(isoWritingProgram, fileNameCase, addRockRidge, outLocation,
-				isoPrefix, isoNameDate, isoExtension, rootIsoDirectory.toString());
+		String[] createIsoCommand = { isoWritingProgram, fileNameCase, addRockRidge,
+				outLocation + isoPrefix + isoNameDate + isoExtension, rootIsoDirectory.toString() };
+		System.out.println("i am here");
+		runOperatingSystemCommand(createIsoCommand);
 
-		// ProcessBuilder probuilder = new ProcessBuilder(createIsoCommand);
-		Process process = proBuilder.start();
-
-		InputStream is = process.getErrorStream();
-		InputStreamReader isr = new InputStreamReader(is);
-		BufferedReader br = new BufferedReader(isr);
-		String line;
-		System.out.println("Creating ISO file: " + outLocation + isoPrefix + isoNameDate + isoExtension);
-		while ((line = br.readLine()) != null) {
-			// uncomment this line to see ISO creation spam.
-			// System.out.println(line);
-		}
-		try {
-			int exitValue = process.waitFor();
-			System.out.println("ExitValue is " + exitValue);
-		} catch (InterruptedException e1) {
-			e1.printStackTrace();
-		}
 	}
 
 	/**
@@ -184,12 +162,12 @@ public class ProcessPodcasts extends SimpleFileVisitor<Path> {
 	 * @throws IOException
 	 */
 	public File downSample(File incFile, Path directoryToWriteTo) throws IOException {
-		String SAMPLE_RATE = "--resample 8 ";
+		String SAMPLE_RATE = "8";
 		int NUM_CHANNELS = 1;
 		String BIT_RATE = "-b 32";
 		String encoderCommand = "/usr/bin/lame";
-		String supressOutput = "-quiet";
-		String downMixToMono = "-m m";
+		String supressOutput = "-S";
+		String downMixToMono = "-a";
 
 		File fileInProgress;
 		Path currentWorkingDirectory;
@@ -198,8 +176,8 @@ public class ProcessPodcasts extends SimpleFileVisitor<Path> {
 		fileInProgress = incFile;
 		currentWorkingDirectory = directoryToWriteTo;
 
-		String[] lameCommand = { encoderCommand, BIT_RATE, SAMPLE_RATE, downMixToMono, "-a",
-				incFile.toString(), " --out-dir ", currentWorkingDirectory.toString() };
+		String[] lameCommand = { encoderCommand, supressOutput, BIT_RATE, "--resample", SAMPLE_RATE, downMixToMono,
+				incFile.toString(), "--out-dir", currentWorkingDirectory.toString() };
 		runOperatingSystemCommand(lameCommand);
 		source = incFile.toPath();
 		Files.move(source, source.resolveSibling("converted_" + incFile.getName()));
@@ -216,14 +194,14 @@ public class ProcessPodcasts extends SimpleFileVisitor<Path> {
 	 * @throws IOException
 	 */
 	public void split(File incFile, Path incDir) throws IOException {
-		String SPLITTIME = "-t 14.0";
-		// String SPLITNUMBER = "-S 3";
+		// String SPLITTIME = "-t 14.0";
+		String SPLITNUMBER = "-S 3";
 		String splitCommand = "/usr/bin/mp3splt";
 		String outDirParameter = "-d";
 		Path currentWorkingDirectory;
 		currentWorkingDirectory = incDir.toAbsolutePath();
 
-		String[] mp3spltCommand = { splitCommand, SPLITTIME, outDirParameter, currentWorkingDirectory.toString(),
+		String[] mp3spltCommand = { splitCommand, SPLITNUMBER, outDirParameter, currentWorkingDirectory.toString(),
 				incFile.toString() };
 		runOperatingSystemCommand(mp3spltCommand);
 		cleanUpSource(incFile.toPath());
